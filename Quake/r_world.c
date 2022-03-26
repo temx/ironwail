@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern cvar_t gl_fullbrights, r_oldskyleaf, r_showtris; //johnfitz
 extern cvar_t gl_zfix; // QuakeSpasm z-fighting fix
+extern cvar_t gl_supersampletex;
 
 extern gltexture_t *lightmap_texture;
 extern gltexture_t *skybox_cubemap;
@@ -530,18 +531,19 @@ static void R_DrawBrushModels_Real (entity_t **ents, int count, brushpass_t pass
 		count = countof(bmodel_instances);
 	}
 
+	i = softemu > 1 ? q_max(0, (int)softemu - 1) : (gl_supersampletex.value != 0) * 3;
 	switch (pass)
 	{
 	default:
 	case BP_SOLID:
 		texbegin = 0;
 		texend = TEXTYPE_CUTOUT;
-		program = glprogs.world[q_max(0, (int)softemu - 1)][WORLDSHADER_SOLID];
+		program = glprogs.world[i][WORLDSHADER_SOLID];
 		break;
 	case BP_ALPHATEST:
 		texbegin = TEXTYPE_CUTOUT;
 		texend = TEXTYPE_CUTOUT + 1;
-		program = glprogs.world[q_max(0, (int)softemu - 1)][WORLDSHADER_ALPHATEST];
+		program = glprogs.world[i][WORLDSHADER_ALPHATEST];
 		break;
 	case BP_SKYLAYERS:
 		texbegin = TEXTYPE_SKY;
@@ -671,8 +673,9 @@ void R_DrawBrushModels_Water (entity_t **ents, int count, qboolean translucent)
 	else
 		state |= GLS_BLEND_OPAQUE;
 
+	i = softemu > 1 ? q_max(0, (int)softemu - 1) : (gl_supersampletex.value != 0) * 3;
 	if (cl.worldmodel->haslitwater && r_litwater.value)
-		program = glprogs.world[q_max(0, (int)softemu - 1)][WORLDSHADER_WATER];
+		program = glprogs.world[i][WORLDSHADER_WATER];
 	else
 		program = glprogs.water[softemu == SOFTEMU_COARSE];
 
