@@ -39,6 +39,8 @@ static qboolean batchshowtris;
 static GLushort batchindices[6 * MAX_BATCH_SPRITES];
 static qboolean batchindices_init = false;
 
+extern cvar_t gl_supersampletex;
+
 /*
 ================
 R_InitSpriteIndices
@@ -140,7 +142,7 @@ static void R_FlushSpriteInstances (void)
 		GL_PolygonOffset (OFFSET_DECAL);
 
 	dither = (softemu == SOFTEMU_COARSE && !showtris);
-	GL_UseProgram (glprogs.sprites[dither]);
+	GL_UseProgram (glprogs.sprites[(gl_supersampletex.value != 0)][dither]);
 
 	if (showtris)
 		GL_SetState (GLS_BLEND_OPAQUE | GLS_NO_ZWRITE | GLS_CULL_NONE | GLS_ATTRIBS(2));

@@ -477,15 +477,15 @@ typedef struct glprogs_s {
 	GLuint		postprocess[3];	// [palettize:off/dithered/direct]
 
 	/* 3d */
-	GLuint		world[3][3];	// [dither][mode:solid/alpha test/water]
-	GLuint		water[2];		// [dither]
+	GLuint		world[2][3][3];		// [supersample][dither][mode:solid/alpha test/water]
+	GLuint		water[2][2];		// [supersample][dither]
 	GLuint		skystencil;
-	GLuint		skylayers[2];	// [dither]
-	GLuint		skycubemap[2];	// [dither]
-	GLuint		skyboxside[2];	// [dither]
-	GLuint		alias[3][2];	// [mode:standard/dithered/noperspective][alpha test]
-	GLuint		sprites[2];		// [dither]
-	GLuint		particles[2];	// [dither]
+	GLuint		skylayers[2][2];	// [supersample][dither]
+	GLuint		skycubemap[2][2];	// [supersample][dither]
+	GLuint		skyboxside[2][2];	// [supersample][dither]
+	GLuint		alias[2][3][2];		// [supersample][mode:standard/dithered/noperspective][alpha test]
+	GLuint		sprites[2][2];		// [supersample][dither][dither]
+	GLuint		particles[2][2];	// [supersample][dither]
 	GLuint		debug3d;
 
 	/* compute */

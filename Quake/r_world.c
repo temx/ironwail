@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern cvar_t gl_fullbrights, r_oldskyleaf, r_showtris; //johnfitz
 extern cvar_t gl_zfix; // QuakeSpasm z-fighting fix
+extern cvar_t gl_supersampletex;
 
 extern gltexture_t *lightmap_texture;
 extern gltexture_t *skybox_cubemap;
@@ -536,22 +537,22 @@ static void R_DrawBrushModels_Real (entity_t **ents, int count, brushpass_t pass
 	case BP_SOLID:
 		texbegin = 0;
 		texend = TEXTYPE_CUTOUT;
-		program = glprogs.world[q_max(0, (int)softemu - 1)][WORLDSHADER_SOLID];
+		program = glprogs.world[(gl_supersampletex.value != 0)][q_max(0, (int)softemu - 1)][WORLDSHADER_SOLID];
 		break;
 	case BP_ALPHATEST:
 		texbegin = TEXTYPE_CUTOUT;
 		texend = TEXTYPE_CUTOUT + 1;
-		program = glprogs.world[q_max(0, (int)softemu - 1)][WORLDSHADER_ALPHATEST];
+		program = glprogs.world[(gl_supersampletex.value != 0)][q_max(0, (int)softemu - 1)][WORLDSHADER_ALPHATEST];
 		break;
 	case BP_SKYLAYERS:
 		texbegin = TEXTYPE_SKY;
 		texend = TEXTYPE_SKY + 1;
-		program = glprogs.skylayers[softemu == SOFTEMU_COARSE];
+		program = glprogs.skylayers[(gl_supersampletex.value != 0)][softemu == SOFTEMU_COARSE];
 		break;
 	case BP_SKYCUBEMAP:
 		texbegin = TEXTYPE_SKY;
 		texend = TEXTYPE_SKY + 1;
-		program = glprogs.skycubemap[softemu == SOFTEMU_COARSE];
+		program = glprogs.skycubemap[(gl_supersampletex.value != 0)][softemu == SOFTEMU_COARSE];
 		break;
 	case BP_SKYSTENCIL:
 		texbegin = TEXTYPE_SKY;
@@ -561,7 +562,7 @@ static void R_DrawBrushModels_Real (entity_t **ents, int count, brushpass_t pass
 	case BP_SHOWTRIS:
 		texbegin = 0;
 		texend = TEXTYPE_COUNT;
-		program = glprogs.world[0][0];
+		program = glprogs.world[0][0][0];
 		break;
 	}
 
@@ -672,9 +673,9 @@ void R_DrawBrushModels_Water (entity_t **ents, int count, qboolean translucent)
 		state |= GLS_BLEND_OPAQUE;
 
 	if (cl.worldmodel->haslitwater && r_litwater.value)
-		program = glprogs.world[q_max(0, (int)softemu - 1)][WORLDSHADER_WATER];
+		program = glprogs.world[(gl_supersampletex.value != 0)][q_max(0, (int)softemu - 1)][WORLDSHADER_WATER];
 	else
-		program = glprogs.water[softemu == SOFTEMU_COARSE];
+		program = glprogs.water[(gl_supersampletex.value != 0)][softemu == SOFTEMU_COARSE];
 
 	R_ResetBModelCalls (program);
 	GL_SetState (state);
