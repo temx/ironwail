@@ -289,9 +289,12 @@ void GL_CreateShaders (void)
 	for (palettize = 0; palettize < 3; palettize++)
 		glprogs.postprocess[palettize] = GL_CreateProgram (postprocess_vertex_shader, postprocess_fragment_shader, "postprocess|PALETTIZE %d", palettize);
 
-	for (dither = 0; dither < 3; dither++)
-		for (mode = 0; mode < 3; mode++)
-			glprogs.world[dither][mode] = GL_CreateProgram (world_vertex_shader, world_fragment_shader, "world|DITHER %d; MODE %d", dither, mode);
+	for (mode = 0; mode < 3; mode++)
+	{
+		for (dither = 0; dither < 3; dither++)
+			glprogs.world[dither][mode] = GL_CreateProgram (world_vertex_shader, world_fragment_shader, "world|DITHER %d; MODE %d; SS %d", dither, mode, 0);
+		glprogs.world[3][mode] = GL_CreateProgram(world_vertex_shader, world_fragment_shader, "world|DITHER %d; MODE %d; SS %d", 0, mode, 1);
+	}
 
 	for (dither = 0; dither < 2; dither++)
 	{
