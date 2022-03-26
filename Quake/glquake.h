@@ -477,7 +477,7 @@ typedef struct glprogs_s {
 	GLuint		postprocess[3];	// [palettize:off/dithered/direct]
 
 	/* 3d */
-	GLuint		world[3][3];	// [dither][mode:solid/alpha test/water]
+	GLuint		world[4][3];	// [dither/SS][mode:solid/alpha test/water]
 	GLuint		water[2];		// [dither]
 	GLuint		skystencil;
 	GLuint		skylayers[2];	// [dither]
