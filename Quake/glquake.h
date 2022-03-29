@@ -501,7 +501,8 @@ extern glprogs_t glprogs;
 
 void GL_UseProgram (GLuint program);
 void GL_ClearCachedProgram (void);
-void GL_CreateShaders (void);
+void GL_CreateShaders_Static (void);
+void GL_CreateShaders_Permutation (int ss, int any_dither);
 void GL_DeleteShaders (void);
 
 typedef struct glframebufs_s {

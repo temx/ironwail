@@ -1178,7 +1178,7 @@ static void GL_Init (void)
 	}
 	//johnfitz
 
-	GL_CreateShaders ();
+	GL_CreateShaders_Static ();
 	GL_CreateFrameBuffers ();
 	GLWorld_CreateResources ();
 	GLLight_CreateResources ();
@@ -1196,6 +1196,8 @@ GL_BeginRendering -- sets values of glx, gly, glwidth, glheight
 void GL_BeginRendering (int *x, int *y, int *width, int *height)
 {
 	qboolean postprocess = vid_gamma.value != 1.f || vid_contrast.value != 1.f || softemu;
+
+	GL_CreateShaders_Permutation (gl_supersampletex.value != 0, softemu);
 
 	*x = *y = 0;
 	*width = vid.width;
