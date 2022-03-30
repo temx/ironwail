@@ -168,6 +168,7 @@ void TexMgr_CompressTextures_f (cvar_t *var);
 
 extern cvar_t gl_texture_anisotropy;
 extern cvar_t gl_texturemode;
+extern cvar_t gl_supersampletex;
 extern cvar_t gl_compress_textures;
 extern cvar_t r_particles;
 extern cvar_t r_dynamic;
@@ -1940,10 +1941,11 @@ static void VID_Menu_ChooseNextScale (int dir)
 	Cvar_SetValueQuick (&r_scale, CLAMP (1, scale, vid.maxscale));
 }
 
-static const char *const texfilters[][2] =
+static const char *const texfilters[][3] =
 {
-	{"gl_nearest_mipmap_linear", "Classic"},
-	{"gl_linear_mipmap_linear", "Smooth"},
+	{"gl_nearest_mipmap_linear", "0", "Classic"},
+	{"gl_nearest_mipmap_linear", "1", "Classic+"},
+	{"gl_linear_mipmap_linear", "0", "Smooth"},
 };
 
 /*
@@ -1953,23 +1955,32 @@ VID_Menu_ChooseNextTexFilter
 chooses next texture filter, then updates gl_texturemode cvar
 ================
 */
-static void VID_Menu_ChooseNextTexFilter (void)
+static void VID_Menu_ChooseNextTexFilter (int dir)
 {
 	const char *filter = gl_texturemode.string;
-	int i;
+	const char *ss = gl_supersampletex.string;
+	int i, count = countof(texfilters);
 
-	for (i = 0; i < countof (texfilters); i++)
+	for (i = 0; i < count; i++)
 	{
-		if (!q_strcasecmp (filter, texfilters[i][0]))
+		if (!q_strcasecmp (filter, texfilters[i][0]) && !q_strcasecmp (ss, texfilters[i][1]))
 		{
-			filter = texfilters[(i + 1) % countof (texfilters)][0];
+			i = (i + dir) % count;
+			if (i < 0)
+				i += count;
+			filter = texfilters[i][0];
+			ss = texfilters[i][1];
 			break;
 		}
 	}
 	if (i == countof (texfilters))
+	{
 		filter = texfilters[0][0];
+		ss = texfilters[0][1];
+	}
 
 	Cvar_SetQuick (&gl_texturemode, filter);
+	Cvar_SetQuick (&gl_supersampletex, ss);
 }
 
 /*
@@ -1980,10 +1991,11 @@ VID_Menu_GetTexFilterDesc
 static const char *VID_Menu_GetTexFilterDesc (void)
 {
 	const char *current = Cvar_VariableString ("gl_texturemode");
+	const char *currentss = Cvar_VariableString ("gl_supersampletex");
 	int i;
 	for (i = 0; i < countof (texfilters); i++)
-		if (!q_strcasecmp (current, texfilters[i][0]))
-			return texfilters[i][1];
+		if (!q_strcasecmp (current, texfilters[i][0]) && !q_strcasecmp(currentss, texfilters[i][1]))
+			return texfilters[i][2];
 	return "";
 }
 
@@ -2122,7 +2134,7 @@ static void VID_MenuKey (int key)
 			VID_Menu_ChooseNextAnisotropy (1);
 			break;
 		case VID_OPT_TEXFILTER:
-			VID_Menu_ChooseNextTexFilter ();
+			VID_Menu_ChooseNextTexFilter (-1);
 			break;
 		case VID_OPT_PARTICLES:
 			Cbuf_AddText ("cycle r_particles 1 2 0\n");
@@ -2176,7 +2188,7 @@ static void VID_MenuKey (int key)
 			VID_Menu_ChooseNextAnisotropy (-1);
 			break;
 		case VID_OPT_TEXFILTER:
-			VID_Menu_ChooseNextTexFilter ();
+			VID_Menu_ChooseNextTexFilter (1);
 			break;
 		case VID_OPT_PARTICLES:
 			Cbuf_AddText ("cycle r_particles 0 2 1\n");
@@ -2232,7 +2244,7 @@ static void VID_MenuKey (int key)
 			VID_Menu_ChooseNextAnisotropy (1);
 			break;
 		case VID_OPT_TEXFILTER:
-			VID_Menu_ChooseNextTexFilter ();
+			VID_Menu_ChooseNextTexFilter (1);
 			break;
 		case VID_OPT_PARTICLES:
 			Cbuf_AddText ("cycle r_particles 0 2 1\n");

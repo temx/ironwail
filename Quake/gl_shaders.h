@@ -420,6 +420,37 @@ DRAW_ELEMENTS_INDIRECT_COMMAND \
 "\n"\
 
 ////////////////////////////////////////////////////////////////
+
+#define SS(type) \
+"{\n"\
+"	if (SS == 0) return texture(Tex, uv);\n"\
+"	" type " uvdx = dFdx(uv);\n"\
+"	" type " uvdy = dFdy(uv);\n"\
+"	vec4 s1 = texture(Tex, uv + uvdx * -.125 + uvdy * -.375, -1.0);\n"\
+"	vec4 s2 = texture(Tex, uv + uvdx *  .375 + uvdy * -.125, -1.0);\n"\
+"	vec4 s3 = texture(Tex, uv + uvdx * -.375 + uvdy *  .125, -1.0);\n"\
+"	vec4 s4 = texture(Tex, uv + uvdx *  .125 + uvdy *  .375, -1.0);\n"\
+"	return (s1 + s2 + s3 + s4) * 0.25;\n"\
+"}\n"\
+"vec4 textureSupersample(sampler2D Tex, vec2 uv, float bias)\n"\
+"{\n"\
+"	if (SS == 0) return texture(Tex, uv, bias);\n"\
+"	vec2 uvdx = dFdx(uv);\n"\
+"	vec2 uvdy = dFdy(uv);\n"\
+"	vec4 s1 = texture(Tex, uv + uvdx * -.125 + uvdy * -.375, bias - 1.0);\n"\
+"	vec4 s2 = texture(Tex, uv + uvdx *  .375 + uvdy * -.125, bias - 1.0);\n"\
+"	vec4 s3 = texture(Tex, uv + uvdx * -.375 + uvdy *  .125, bias - 1.0);\n"\
+"	vec4 s4 = texture(Tex, uv + uvdx *  .125 + uvdy *  .375, bias - 1.0);\n"\
+"	return (s1 + s2 + s3 + s4) * 0.25;\n"\
+"}\n"\
+
+#define TEXTURE_SUPERSAMPLE \
+"vec4 textureSupersample(sampler2D Tex, vec2 uv)\n" SS("vec2")
+
+#define CUBEMAP_SUPERSAMPLE \
+"vec4 textureSupersample(samplerCube Tex, vec3 uv)\n" SS("vec3")
+
+////////////////////////////////////////////////////////////////
 //
 // World
 //
@@ -515,6 +546,7 @@ LIGHT_CLUSTER_IMAGE("readonly")
 WORLD_CALLDATA_BUFFER
 WORLD_INSTANCEDATA_BUFFER
 NOISE_FUNCTIONS
+TEXTURE_SUPERSAMPLE
 "\n"
 "layout(location=0) flat in uint in_flags;\n"
 "layout(location=1) flat in float in_alpha;\n"
@@ -548,20 +580,23 @@ NOISE_FUNCTIONS
 "	if ((in_flags & CF_USE_FULLBRIGHT) != 0u)\n"
 "	{\n"
 "		FullbrightTex = sampler2D(in_samplers.zw);\n"
-"		fullbright = texture(FullbrightTex, uv).rgb;\n"
+"		fullbright = textureSupersample(FullbrightTex, uv).rgb;\n"
 "	}\n"
 "#else\n"
 "	if ((in_flags & CF_USE_FULLBRIGHT) != 0u)\n"
-"		fullbright = texture(FullbrightTex, uv).rgb;\n"
+"		fullbright = textureSupersample(FullbrightTex, uv).rgb;\n"
 "#endif\n"
 "#if DITHER >= 2\n"
-"	vec4 result = texture(Tex, uv, -1.0);\n"
+"	vec4 result = textureSupersample(Tex, uv, -1.0);\n"
 "#elif DITHER\n"
-"	vec4 result = texture(Tex, uv, -0.5);\n"
+"	vec4 result = textureSupersample(Tex, uv, -0.5);\n"
 "#else\n"
-"	vec4 result = texture(Tex, uv);\n"
+"	vec4 result = textureSupersample(Tex, uv);\n"
 "#endif\n"
-"#if MODE == " QS_STRINGIFY (WORLDSHADER_ALPHATEST) "\n"
+"#if SS && MODE == " QS_STRINGIFY(WORLDSHADER_ALPHATEST) "\n"
+"	if (result.a < 0.5)\n"
+"		discard;\n"
+"#elif MODE == " QS_STRINGIFY (WORLDSHADER_ALPHATEST) "\n"
 "	if (result.a < 0.666)\n"
 "		discard;\n"
 "#endif\n"
@@ -712,6 +747,7 @@ static const char water_fragment_shader[] =
 "\n"
 FRAMEDATA_BUFFER
 NOISE_FUNCTIONS
+TEXTURE_SUPERSAMPLE
 "\n"
 "layout(location=0) flat in float in_alpha;\n"
 "layout(location=1) in vec2 in_uv;\n"
@@ -728,7 +764,7 @@ NOISE_FUNCTIONS
 "#if BINDLESS\n"
 "	sampler2D Tex = sampler2D(in_sampler);\n"
 "#endif\n"
-"	vec4 result = texture(Tex, uv);\n"
+"	vec4 result = textureSupersample(Tex, uv);\n"
 "	result.rgb = ApplyFog(result.rgb, in_fogdist);\n"
 "	result.a *= in_alpha;\n"
 "	out_fragcolor = result;\n"
@@ -807,6 +843,7 @@ static const char sky_layers_fragment_shader[] =
 "#endif\n"
 "\n"
 FRAMEDATA_BUFFER
+TEXTURE_SUPERSAMPLE
 "\n"
 "layout(location=0) in vec3 in_dir;\n"
 "#if BINDLESS\n"
@@ -822,8 +859,8 @@ FRAMEDATA_BUFFER
 "	sampler2D AlphaLayer = sampler2D(in_samplers.zw);\n"
 "#endif\n"
 "	vec2 uv = normalize(in_dir).xy * (189.0 / 64.0);\n"
-"	vec4 result = texture(SolidLayer, uv + Time / 16.0);\n"
-"	vec4 layer = texture(AlphaLayer, uv + Time / 8.0);\n"
+"	vec4 result = textureSupersample(SolidLayer, uv + Time / 16.0);\n"
+"	vec4 layer = textureSupersample(AlphaLayer, uv + Time / 8.0);\n"
 "	result.rgb = mix(result.rgb, layer.rgb, layer.a);\n"
 "	result.rgb = mix(result.rgb, SkyFog.rgb, SkyFog.a);\n"
 "	out_fragcolor = result;\n"
@@ -861,6 +898,7 @@ WORLD_VERTEX_BUFFER
 static const char sky_cubemap_fragment_shader[] =
 FRAMEDATA_BUFFER
 NOISE_FUNCTIONS
+CUBEMAP_SUPERSAMPLE
 "\n"
 "layout(binding=2) uniform samplerCube Skybox;\n"
 "\n"
@@ -870,7 +908,7 @@ NOISE_FUNCTIONS
 "\n"
 "void main()\n"
 "{\n"
-"	out_fragcolor = texture(Skybox, in_dir);\n"
+"	out_fragcolor = textureSupersample(Skybox, in_dir);\n"
 "	out_fragcolor.rgb = mix(out_fragcolor.rgb, SkyFog.rgb, SkyFog.a);\n"
 "#if DITHER\n"
 "	out_fragcolor.rgb = sqrt(out_fragcolor.rgb);\n"
@@ -909,6 +947,7 @@ static const char sky_boxside_fragment_shader[] =
 "layout(binding=0) uniform sampler2D Tex;\n"
 "\n"
 NOISE_FUNCTIONS
+TEXTURE_SUPERSAMPLE
 "\n"
 "layout(location=2) uniform vec4 Fog;\n"
 "\n"
@@ -919,7 +958,7 @@ NOISE_FUNCTIONS
 "\n"
 "void main()\n"
 "{\n"
-"	out_fragcolor = texture(Tex, in_uv);\n"
+"	out_fragcolor = textureSupersample(Tex, in_uv);\n"
 "	out_fragcolor.rgb = mix(out_fragcolor.rgb, Fog.rgb, Fog.w);\n"
 "#if DITHER\n"
 "	out_fragcolor.rgb = sqrt(out_fragcolor.rgb);\n"
@@ -1020,6 +1059,7 @@ ALIAS_INSTANCE_BUFFER
 static const char alias_fragment_shader[] =
 ALIAS_INSTANCE_BUFFER
 NOISE_FUNCTIONS
+TEXTURE_SUPERSAMPLE
 "\n"
 "layout(binding=0) uniform sampler2D Tex;\n"
 "layout(binding=1) uniform sampler2D FullbrightTex;\n"
@@ -1041,7 +1081,7 @@ NOISE_FUNCTIONS
 "	uv -= 0.5 / vec2(textureSize(Tex, 0).xy);\n"
 "	vec4 result = textureLod(Tex, uv, 0.);\n"
 "#else\n"
-"	vec4 result = texture(Tex, uv);\n"
+"	vec4 result = textureSupersample(Tex, uv);\n"
 "#endif\n"
 "#if ALPHATEST\n"
 "	if (result.a < 0.666)\n"
@@ -1054,7 +1094,7 @@ NOISE_FUNCTIONS
 "#if MODE == " QS_STRINGIFY (ALIASSHADER_NOPERSP) "\n"
 "	result.rgb += textureLod(FullbrightTex, uv, 0.).rgb;\n"
 "#else\n"
-"	result.rgb += texture(FullbrightTex, uv).rgb;\n"
+"	result.rgb += textureSupersample(FullbrightTex, uv).rgb;\n"
 "#endif\n"
 "	result.rgb = clamp(result.rgb, 0.0, 1.0);\n"
 "	float fog = exp2(-(Fog.w * in_fogdist) * (Fog.w * in_fogdist));\n"
@@ -1098,6 +1138,7 @@ FRAMEDATA_BUFFER
 static const char sprites_fragment_shader[] =
 FRAMEDATA_BUFFER
 NOISE_FUNCTIONS
+TEXTURE_SUPERSAMPLE
 "\n"
 "layout(binding=0) uniform sampler2D Tex;\n"
 "\n"
@@ -1108,9 +1149,14 @@ NOISE_FUNCTIONS
 "\n"
 "void main()\n"
 "{\n"
-"	vec4 result = texture(Tex, in_uv);\n"
+"	vec4 result = textureSupersample(Tex, in_uv);\n"
+"#if SS\n"
+"	if (result.a < 0.5)\n"
+"		discard;\n"
+"#else\n"
 "	if (result.a < 0.666)\n"
 "		discard;\n"
+"#endif\n"
 "	result.rgb = ApplyFog(result.rgb, in_fogdist);\n"
 "	out_fragcolor = result;\n"
 "#if DITHER\n"
@@ -1153,6 +1199,7 @@ FRAMEDATA_BUFFER
 static const char particles_fragment_shader[] =
 FRAMEDATA_BUFFER
 NOISE_FUNCTIONS
+TEXTURE_SUPERSAMPLE
 "\n"
 "layout(binding=0) uniform sampler2D Tex;\n"
 "\n"
@@ -1164,7 +1211,7 @@ NOISE_FUNCTIONS
 "\n"
 "void main()\n"
 "{\n"
-"	vec4 result = texture(Tex, in_uv);\n"
+"	vec4 result = textureSupersample(Tex, in_uv);\n"
 "	result *= in_color;\n"
 "	result.rgb = ApplyFog(result.rgb, in_fogdist);\n"
 "	out_fragcolor = result;\n"

@@ -280,7 +280,7 @@ GL_CreateShaders
 */
 void GL_CreateShaders (void)
 {
-	int palettize, dither, mode, alphatest, warp;
+	int palettize, dither, mode, alphatest, warp, ss, i;
 
 	glprogs.gui = GL_CreateProgram (gui_vertex_shader, gui_fragment_shader, "gui");
 	glprogs.viewblend = GL_CreateProgram (viewblend_vertex_shader, viewblend_fragment_shader, "viewblend");
@@ -289,24 +289,34 @@ void GL_CreateShaders (void)
 	for (palettize = 0; palettize < 3; palettize++)
 		glprogs.postprocess[palettize] = GL_CreateProgram (postprocess_vertex_shader, postprocess_fragment_shader, "postprocess|PALETTIZE %d", palettize);
 
-	for (dither = 0; dither < 3; dither++)
-		for (mode = 0; mode < 3; mode++)
-			glprogs.world[dither][mode] = GL_CreateProgram (world_vertex_shader, world_fragment_shader, "world|DITHER %d; MODE %d", dither, mode);
-
-	for (dither = 0; dither < 2; dither++)
+	for (i = 0; i < 4; i++)
 	{
-		glprogs.water[dither] = GL_CreateProgram (water_vertex_shader, water_fragment_shader, "water|DITHER %d", dither);
-		glprogs.skylayers[dither] = GL_CreateProgram (sky_layers_vertex_shader, sky_layers_fragment_shader, "sky layers|DITHER %d", dither);
-		glprogs.skycubemap[dither] = GL_CreateProgram (sky_cubemap_vertex_shader, sky_cubemap_fragment_shader, "sky cubemap|DITHER %d", dither);
-		glprogs.skyboxside[dither] = GL_CreateProgram (sky_boxside_vertex_shader, sky_boxside_fragment_shader, "skybox side|DITHER %d", dither);
-		glprogs.sprites[dither] = GL_CreateProgram (sprites_vertex_shader, sprites_fragment_shader, "sprites|DITHER %d", dither);
-		glprogs.particles[dither] = GL_CreateProgram (particles_vertex_shader, particles_fragment_shader, "particles|DITHER %d", dither);
+		ss = i == 3;
+		dither = i < 3 ? i : 0;
+		for (mode = 0; mode < 3; mode++)
+			glprogs.world[i][mode] = GL_CreateProgram(world_vertex_shader, world_fragment_shader, "world|DITHER %d; MODE %d; SS %d", dither, mode, ss);
+	}
+
+	for (i = 0; i < 3; i++)
+	{
+		ss = i == 2;
+		dither = i == 1;
+		glprogs.water[i] = GL_CreateProgram (water_vertex_shader, water_fragment_shader, "water|DITHER %d; SS %d", dither, ss);
+		glprogs.skylayers[i] = GL_CreateProgram (sky_layers_vertex_shader, sky_layers_fragment_shader, "sky layers|DITHER %d; SS %d", dither, ss);
+		glprogs.skycubemap[i] = GL_CreateProgram (sky_cubemap_vertex_shader, sky_cubemap_fragment_shader, "sky cubemap|DITHER %d; SS %d", dither, ss);
+		glprogs.skyboxside[i] = GL_CreateProgram (sky_boxside_vertex_shader, sky_boxside_fragment_shader, "skybox side|DITHER %d; SS %d", dither, ss);
+		glprogs.sprites[i] = GL_CreateProgram (sprites_vertex_shader, sprites_fragment_shader, "sprites|DITHER %d; SS %d", dither, ss);
+		glprogs.particles[i] = GL_CreateProgram (particles_vertex_shader, particles_fragment_shader, "particles|DITHER %d; SS %d", dither, ss);
 	}
 	glprogs.skystencil = GL_CreateProgram (skystencil_vertex_shader, NULL, "sky stencil");
 
-	for (mode = 0; mode < 3; mode++)
+	for (i = 0; i < 4; i++)
+	{
+		ss = i == 3;
+		mode = i < 3 ? i : 0;
 		for (alphatest = 0; alphatest < 2; alphatest++)
-			glprogs.alias[mode][alphatest] = GL_CreateProgram (alias_vertex_shader, alias_fragment_shader, "alias|MODE %d; ALPHATEST %d", mode, alphatest);
+			glprogs.alias[i][alphatest] = GL_CreateProgram(alias_vertex_shader, alias_fragment_shader, "alias|MODE %d; ALPHATEST %d; SS %d", mode, alphatest, ss);
+	}
 
 	glprogs.debug3d = GL_CreateProgram (debug3d_vertex_shader, debug3d_fragment_shader, "debug3d");
 

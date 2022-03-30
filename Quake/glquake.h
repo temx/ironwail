@@ -468,6 +468,7 @@ int R_LightPoint (vec3_t p, lightcache_t *cache);
 #define ALIASSHADER_STANDARD	0
 #define ALIASSHADER_DITHER		1
 #define ALIASSHADER_NOPERSP		2
+#define ALIASSHADER_SUPERSAMPLE	3
 
 typedef struct glprogs_s {
 	/* 2d */
@@ -477,15 +478,15 @@ typedef struct glprogs_s {
 	GLuint		postprocess[3];	// [palettize:off/dithered/direct]
 
 	/* 3d */
-	GLuint		world[3][3];	// [dither][mode:solid/alpha test/water]
-	GLuint		water[2];		// [dither]
+	GLuint		world[4][3];	// [dither/SS][mode:solid/alpha test/water]
+	GLuint		water[3];		// [dither/SS]
 	GLuint		skystencil;
-	GLuint		skylayers[2];	// [dither]
-	GLuint		skycubemap[2];	// [dither]
-	GLuint		skyboxside[2];	// [dither]
-	GLuint		alias[3][2];	// [mode:standard/dithered/noperspective][alpha test]
-	GLuint		sprites[2];		// [dither]
-	GLuint		particles[2];	// [dither]
+	GLuint		skylayers[3];	// [dither/SS]
+	GLuint		skycubemap[3];	// [dither/SS]
+	GLuint		skyboxside[3];	// [dither/SS]
+	GLuint		alias[4][2];	// [mode:standard/dithered/noperspective/SS][alpha test]
+	GLuint		sprites[3];		// [dither/SS]
+	GLuint		particles[3];	// [dither/SS]
 	GLuint		debug3d;
 
 	/* compute */

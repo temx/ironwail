@@ -38,6 +38,7 @@ static const struct {
 };
 
 static cvar_t	r_softemu = {"r_softemu", "0", CVAR_ARCHIVE};
+cvar_t			gl_supersampletex = {"gl_supersampletex", "0", CVAR_ARCHIVE};
 static cvar_t	gl_max_size = {"gl_max_size", "0", CVAR_NONE};
 static cvar_t	gl_picmip = {"gl_picmip", "0", CVAR_NONE};
 cvar_t			gl_texturemode = {"gl_texturemode", "", CVAR_ARCHIVE};
@@ -743,6 +744,7 @@ void TexMgr_Init (void)
 	Cvar_RegisterVariable (&gl_texturemode);
 	Cvar_SetCallback (&gl_texturemode, &TexMgr_TextureMode_f);
 	Cvar_RegisterVariable (&r_softemu);
+	Cvar_RegisterVariable (&gl_supersampletex);
 	Cvar_SetCallback (&r_softemu, TexMgr_SoftEmu_f);
 	Cmd_AddCommand ("gl_describetexturemodes", &TexMgr_DescribeTextureModes_f);
 	Cmd_AddCommand ("imagelist", &TexMgr_Imagelist_f);

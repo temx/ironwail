@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern cvar_t gl_overbright_models, gl_fullbrights, r_lerpmodels, r_lerpmove; //johnfitz
 extern cvar_t scr_fov, cl_gun_fovscale;
+extern cvar_t gl_supersampletex;
 
 //up to 16 color translated skins
 gltexture_t *playertextures[MAX_SCOREBOARD]; //johnfitz -- changed to an array of pointers
@@ -326,7 +327,10 @@ void R_FlushAliasInstances (void)
 		program = glprogs.alias[ALIASSHADER_DITHER][alphatest];
 		break;
 	default:
-		program = glprogs.alias[ALIASSHADER_STANDARD][alphatest];
+		if (gl_supersampletex.value != 0)
+			program = glprogs.alias[ALIASSHADER_SUPERSAMPLE][alphatest];
+		else
+			program = glprogs.alias[ALIASSHADER_STANDARD][alphatest];
 		break;
 	}
 	GL_UseProgram (program);

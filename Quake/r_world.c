@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern cvar_t gl_fullbrights, r_oldskyleaf, r_showtris; //johnfitz
 extern cvar_t gl_zfix; // QuakeSpasm z-fighting fix
+extern cvar_t gl_supersampletex;
 
 extern gltexture_t *lightmap_texture;
 extern gltexture_t *skybox_cubemap;
@@ -513,7 +514,7 @@ R_DrawBrushModels_Real
 */
 static void R_DrawBrushModels_Real (entity_t **ents, int count, brushpass_t pass)
 {
-	int i, j;
+	int i, j, dither;
 	int totalinst, baseinst;
 	unsigned state;
 	GLuint program;
@@ -530,28 +531,32 @@ static void R_DrawBrushModels_Real (entity_t **ents, int count, brushpass_t pass
 		count = countof(bmodel_instances);
 	}
 
+	dither = q_max(0, (int)softemu - 1);
+	if (!dither && gl_supersampletex.value)
+		dither = 3;
+
 	switch (pass)
 	{
 	default:
 	case BP_SOLID:
 		texbegin = 0;
 		texend = TEXTYPE_CUTOUT;
-		program = glprogs.world[q_max(0, (int)softemu - 1)][WORLDSHADER_SOLID];
+		program = glprogs.world[dither][WORLDSHADER_SOLID];
 		break;
 	case BP_ALPHATEST:
 		texbegin = TEXTYPE_CUTOUT;
 		texend = TEXTYPE_CUTOUT + 1;
-		program = glprogs.world[q_max(0, (int)softemu - 1)][WORLDSHADER_ALPHATEST];
+		program = glprogs.world[dither][WORLDSHADER_ALPHATEST];
 		break;
 	case BP_SKYLAYERS:
 		texbegin = TEXTYPE_SKY;
 		texend = TEXTYPE_SKY + 1;
-		program = glprogs.skylayers[softemu == SOFTEMU_COARSE];
+		program = glprogs.skylayers[softemu == SOFTEMU_COARSE ? 1 : 2 * (gl_supersampletex.value != 0)];
 		break;
 	case BP_SKYCUBEMAP:
 		texbegin = TEXTYPE_SKY;
 		texend = TEXTYPE_SKY + 1;
-		program = glprogs.skycubemap[softemu == SOFTEMU_COARSE];
+		program = glprogs.skycubemap[softemu == SOFTEMU_COARSE ? 1 : 2 * (gl_supersampletex.value != 0)];
 		break;
 	case BP_SKYSTENCIL:
 		texbegin = TEXTYPE_SKY;
@@ -642,7 +647,7 @@ R_DrawBrushModels_Water
 */
 void R_DrawBrushModels_Water (entity_t **ents, int count, qboolean translucent)
 {
-	int i, j;
+	int i, j, dither;
 	int totalinst, baseinst;
 	unsigned state;
 	GLuint buf, program;
@@ -672,9 +677,14 @@ void R_DrawBrushModels_Water (entity_t **ents, int count, qboolean translucent)
 		state |= GLS_BLEND_OPAQUE;
 
 	if (cl.worldmodel->haslitwater && r_litwater.value)
-		program = glprogs.world[q_max(0, (int)softemu - 1)][WORLDSHADER_WATER];
+	{
+		dither = q_max(0, (int)softemu - 1);
+		if (!dither && gl_supersampletex.value)
+			dither = 3;
+		program = glprogs.world[dither][WORLDSHADER_WATER];
+	}
 	else
-		program = glprogs.water[softemu == SOFTEMU_COARSE];
+		program = glprogs.water[softemu == SOFTEMU_COARSE ? 1 : 2 * (gl_supersampletex.value != 0)];
 
 	R_ResetBModelCalls (program);
 	GL_SetState (state);

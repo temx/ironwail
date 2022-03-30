@@ -42,6 +42,7 @@ gltexture_t *particletexture, *particletexture1, *particletexture2, *particletex
 float texturescalefactor; //johnfitz -- compensate for apparent size of different particle textures
 
 cvar_t	r_particles = {"r_particles","2", CVAR_ARCHIVE}; //johnfitz
+extern cvar_t gl_supersampletex;
 
 typedef struct particlevert_t {
 	vec3_t		pos;
@@ -868,7 +869,13 @@ static void R_DrawParticles_Real (qboolean showtris)
 
 	GL_BeginGroup ("Particles");
 
-	dither = (softemu == SOFTEMU_COARSE && !showtris);
+	if (showtris)
+		dither = 0;
+	else if (softemu == SOFTEMU_COARSE)
+		dither = 1;
+	else
+		dither = 2 * (gl_supersampletex.value != 0);
+
 	GL_UseProgram (glprogs.particles[dither]);
 	GL_Bind (GL_TEXTURE0, showtris ? whitetexture : particletexture);
 
